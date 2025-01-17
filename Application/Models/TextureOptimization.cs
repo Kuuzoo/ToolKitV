@@ -1,11 +1,13 @@
 ﻿using CodeWalker.GameFiles;
 using CodeWalker.Utils;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ToolKitV.Models;
 
 namespace ToolkitV.Models
@@ -50,12 +52,12 @@ namespace ToolkitV.Models
             public byte[] dds;
         }
 
-        private static TempFileData CreateTempTextureFile(Texture texture)
+        private static TempFileData CreateTempTextureFile(Texture texture, string uniqueName = "temp")
         {
             TempFileData tempData = new();
-            
+
             string currentDir = Directory.GetCurrentDirectory();
-            tempData.path = currentDir + "\\temp.dds";
+            tempData.path = currentDir + "\\" + uniqueName + ".dds";
 
             try
             {
@@ -71,11 +73,12 @@ namespace ToolkitV.Models
             return tempData;
         }
 
-        private static Texture ConvertTexture(Texture texture, String convertFormat, TempFileData tempFileData)
+        private static Texture ConvertTexture(Texture texture, String convertFormat, TempFileData tempFileData, string uniqueName = "temp")
         {
             Process texConvertation = new();
             texConvertation.StartInfo.FileName = "Dependencies/texconv.exe";
-            texConvertation.StartInfo.Arguments = $"-w {texture.Width} -h {texture.Height} -m {texture.Levels} -f {convertFormat} -bc d temp.dds -y";
+            // texConvertation.StartInfo.Arguments = $"-w {texture.Width} -h {texture.Height} -m {texture.Levels} -f {convertFormat} -bc d {uniqueName}.dds -y";
+            texConvertation.StartInfo.Arguments = $"-w {texture.Width} -h {texture.Height} -m 1 -f DXT5 -bc d {uniqueName}.dds -y";
             texConvertation.StartInfo.UseShellExecute = false;
             texConvertation.StartInfo.CreateNoWindow = true;
 
@@ -92,9 +95,17 @@ namespace ToolkitV.Models
             texture.Format = tex.Format;
             texture.Stride = tex.Stride;
 
+            // delete temp file
+            File.Delete(tempFileData.path);
+
             return texture;
         }
-        private static Texture OptimizeTexture(Texture texture, bool formatOptimization, bool downsize)
+        private static int GetCorrectMipMapAmount(int width, int height)
+        {
+            int size = Math.Min(width, height);
+            return (int)Math.Log(size, 2) - 1;
+        }
+        private static Texture OptimizeTexture(Texture texture, bool formatOptimization, bool downsize, ushort optimizeSizeValue)
         {
             int minSide = Math.Min(texture.Width, texture.Height);
             int maxLevel = (int)Math.Log(minSide, 2);
@@ -104,7 +115,10 @@ namespace ToolkitV.Models
                 texture.Levels = Convert.ToByte(maxLevel - 1);
             }
 
-            TempFileData tempFileData = CreateTempTextureFile(texture);
+            Guid tempFileGuid = Guid.NewGuid();
+            string tempFileName = tempFileGuid.ToString();
+
+            TempFileData tempFileData = CreateTempTextureFile(texture, tempFileName);
 
             if (tempFileData.dds == null)
             {
@@ -149,19 +163,67 @@ namespace ToolkitV.Models
 
             if (downsize)
             {
-                texture.Width /= 2;
-                texture.Height /= 2;
-                texture.Levels = Convert.ToByte(Math.Log(Math.Min(texture.Width, texture.Height), 2) - 1);
+                // do not downsize if "minimap_" is in the texture name
+                if (texture.Name.Contains("minimap_"))
+                {
+                    Debug.WriteLine($"Texture name: {texture.Name}, contains 'minimap_', skip downsize");
+                    return texture;
+                };
+
+                // Check if texture needs to be resized.
+                int totalDimensions = texture.Width + texture.Height;
+                int targetTotalDimensions = optimizeSizeValue * 2;
+
+                if (totalDimensions >= targetTotalDimensions)
+                {
+                    // also make sure 5% less of total dimensions is still greater than the target dimensions
+                    if ((totalDimensions * 0.95f) >= targetTotalDimensions)
+                    {
+                        // Calculate the scale factor outside of the loop to avoid redundant calculations.
+                        float scaleFactor = 0.99f;
+                        int newWidth = texture.Width;
+                        int newHeight = texture.Height;
+
+                        // Perform the resizing.
+                        while ((newWidth + newHeight) >= targetTotalDimensions)
+                        {
+                            newWidth = (int)(newWidth * scaleFactor);
+                            newHeight = (int)(newHeight * scaleFactor);
+                        }
+
+                        // Adjust for even dimensions.
+                        newWidth -= newWidth % 2;
+                        newHeight -= newHeight % 2;
+
+                        // Calculate percent change to decide if resizing should be applied.
+                        float percentChange = (1f - (float)(newWidth * newHeight) / (texture.Width * texture.Height)) * 100;
+
+                        // Check if the percent change is at least 5% before updating.
+                        if (percentChange >= 5f)
+                        {
+                            // Log the downsizing.
+                            Debug.WriteLine($"[OPTIMIZED] Texture ({texture.Format} [{GetCorrectMipMapAmount(texture.Width, texture.Height)}] mip) name: {texture.Name} ({texConvFormat} [{GetCorrectMipMapAmount(newWidth, newHeight)}]), downsize: {percentChange:F2}% ({texture.Width}x{texture.Height} -> {newWidth}x{newHeight})");
+
+                            // Update texture properties since the percent change is significant.
+                            texture.Width = (ushort)newWidth;
+                            texture.Height = (ushort)newHeight;
+                            texture.Levels = Convert.ToByte(GetCorrectMipMapAmount(newWidth, newHeight));
+                        }
+                    }
+                }
             }
 
-            texture = ConvertTexture(texture, texConvFormat, tempFileData);
+            texture = ConvertTexture(texture, texConvFormat, tempFileData, tempFileName);
 
             return texture;
         }
 
         private static Texture UncompressScriptTexture(Texture texture)
         {
-            TempFileData tempFileData = CreateTempTextureFile(texture);
+            Guid tempFileGuid = Guid.NewGuid();
+            string tempFileName = tempFileGuid.ToString();
+
+            TempFileData tempFileData = CreateTempTextureFile(texture, tempFileName);
 
             if (tempFileData.dds == null)
             {
@@ -170,7 +232,7 @@ namespace ToolkitV.Models
 
             string texConvFormat = "R8G8B8A8_UNORM";
 
-            texture = ConvertTexture(texture, texConvFormat, tempFileData);
+            texture = ConvertTexture(texture, texConvFormat, tempFileData, tempFileName);
 
             return texture;
         }
@@ -260,59 +322,58 @@ namespace ToolkitV.Models
         public static ResultsData Optimize(string inputDirectory, string backupDirectory, string optimizeSize, bool onlyOverSized, bool downsize, bool formatOptimization, Delegate optimizeProgressHandler)
         {
             ResultsData resultsData = new();
-
             string[] inputFiles = Directory.GetFiles(inputDirectory, "*.ytd", SearchOption.AllDirectories);
             ushort optimizeSizeValue = Convert.ToUInt16(optimizeSize);
             bool doBackup = backupDirectory != "";
 
-            int currentProgress = 0;
-
             LogWriter logWriter = new("Start texture optimizing");
+
+            List<Task> tasks = new List<Task>();
 
             for (int i = 0; i < inputFiles.Length; i++)
             {
                 string filePath = inputFiles[i];
-                string fileName = Path.GetFileName(filePath);
+                tasks.Add(Task.Run(() => OptimizeFile(inputDirectory, filePath, backupDirectory, doBackup, optimizeSizeValue, onlyOverSized, downsize, formatOptimization, resultsData, logWriter)));
+            }
 
-                logWriter.LogWrite($"File name: {fileName}, File path: ${filePath}");
+            Task.WaitAll(tasks.ToArray());
 
-                float[] fileSizes = GetFileSize(filePath, logWriter);
+            optimizeProgressHandler?.DynamicInvoke(resultsData, 100);
 
-                if (onlyOverSized && fileSizes[1] < 16 || (fileSizes[0] == 0.0f && fileSizes[1] == 0.0f))
-                {
-                    logWriter.LogWrite($"File name: {fileName}, not oversized, skip");
-                    continue;
-                }
+            return resultsData;
+        }
 
-                YtdFile ytdFile;
+        private static void OptimizeFile(string inputDirectory, string filePath, string backupDirectory, bool doBackup, ushort optimizeSizeValue, bool onlyOverSized, bool downsize, bool formatOptimization, ResultsData resultsData, LogWriter logWriter)
+        {
+            string fileName = Path.GetFileName(filePath);
+            logWriter.LogWrite($"File name: {fileName}, File path: ${filePath}");
 
-                try
-                {
-                    ytdFile = CreateYtdFile(filePath);
-                } catch (Exception ex)
-                {
-                    logWriter.LogWrite($"YtdFile not created: {ex}");
-                    continue;
-                }
+            float[] fileSizes = GetFileSize(filePath, logWriter);
 
+            if (onlyOverSized && fileSizes[1] < 16 || (fileSizes[0] == 0.0f && fileSizes[1] == 0.0f))
+            {
+                logWriter.LogWrite($"File name: {fileName}, not oversized, skip");
+                return;
+            }
+
+            try
+            {
+                YtdFile ytdFile = CreateYtdFile(filePath);
                 bool ytdChanged = false;
 
+                // Process each texture within the YtdFile as previously detailed.
+                // Ensure any reference to resultsData is synchronized, as multiple threads will access it.
                 for (int j = 0; j < ytdFile.TextureDict.Textures.Count; j++)
                 {
                     Texture texture = ytdFile.TextureDict.Textures[j];
                     bool isScriptTexture = texture.Name.ToLower().Contains("script_rt");
-
                     if (isScriptTexture && isScriptTextureCompressed(texture))
                     {
                         Texture newTexture = UncompressScriptTexture(texture);
-
                         resultsData.filesOptimized++;
-
                         ytdFile.TextureDict.Textures.data_items[j] = newTexture;
-
                         ytdChanged = true;
                     }
-
                     if (!isScriptTexture && texture.Width + texture.Height >= optimizeSizeValue)
                     {
                         if (!ytdChanged)
@@ -327,48 +388,38 @@ namespace ToolkitV.Models
                                     for (int k = 0; k < dirs.Length - 1; k++)
                                     {
                                         backupPath += "\\" + dirs[k];
-
                                         if (!Directory.Exists(backupPath))
                                         {
                                             Directory.CreateDirectory(backupPath);
                                         }
                                     }
-
                                     File.Copy(filePath, backupPath + "\\" + fileName);
                                 }
-                                catch {}
-                        }
+                                catch { }
+                            }
                             ytdChanged = true;
                         }
-
-                        Texture newTexture = OptimizeTexture(texture, formatOptimization, downsize);
-
+                        Texture newTexture = OptimizeTexture(texture, formatOptimization, downsize, optimizeSizeValue);
                         resultsData.filesOptimized++;
-
                         ytdFile.TextureDict.Textures.data_items[j] = newTexture;
                     }
                 }
+
 
                 if (ytdChanged)
                 {
                     byte[] newData = ytdFile.Save();
                     File.WriteAllBytes(filePath, newData);
-
                     float[] newFileSizes = GetFileSize(filePath, logWriter);
-                    resultsData.optimizedSize += fileSizes[1] - newFileSizes[1];
-                }
 
-                int progress = (i * 100 / inputFiles.Length);
-                if (currentProgress != progress)
-                {
-                    optimizeProgressHandler?.DynamicInvoke(resultsData, progress);
-                    currentProgress = progress;
+                    resultsData.optimizedSize += fileSizes[1] - newFileSizes[1];
+                    resultsData.filesOptimized++;
                 }
             }
-
-            optimizeProgressHandler?.DynamicInvoke(resultsData, 100);
-
-            return resultsData;
+            catch (Exception ex)
+            {
+                logWriter.LogWrite($"Error processing {fileName}: {ex}");
+            }
         }
 
         public static StatsData GetStatsData(string path, Delegate updateHandler)
