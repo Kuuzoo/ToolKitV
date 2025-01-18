@@ -16,6 +16,7 @@ namespace ToolKitV.Views
         }
 
         public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
 
         public string PathValue { get; set; } = "";
         public string Path

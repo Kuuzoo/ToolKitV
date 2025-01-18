@@ -9,8 +9,15 @@
     <Grid>
         <StackPanel>
             <Label HorizontalAlignment="Left" Foreground="White" Style="{StaticResource TT Norms Regular}" FontSize="14" Content="{Binding Title}"/>
+            <Label 
+                HorizontalAlignment="Left"
+                Foreground="#33FFFFFF"
+                Style="{StaticResource TT Norms Regular}"
+                FontSize="14"
+                Content="{Binding Description}"
+            />
 
-            <StackPanel Margin="0 8 0 0" Orientation="Horizontal">
+            <StackPanel Margin="0 5 0 0" Orientation="Horizontal">
                 <TextBox
                     Padding="10 6 0 0"
                     Width="300"
