@@ -4,16 +4,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ToolKitV.Models;
+using static ToolkitV.Models.TextureOptimization;
 
 namespace ToolkitV.Models
 {
     public partial class TextureOptimization
     {
+        private static string BackupPath { get; set; } = "";
         public struct StatsData
         {
             public int filesCount;
@@ -50,6 +50,10 @@ namespace ToolkitV.Models
         {
             public string path;
             public byte[] dds;
+        }
+        public static void updateBackupPath(string backupPath)
+        {
+            BackupPath = backupPath;
         }
 
         private static TempFileData CreateTempTextureFile(Texture texture, string uniqueName = "temp")
@@ -319,10 +323,26 @@ namespace ToolkitV.Models
             return ytd;
         }
 
+        private static string[] getFiles(string path, string searchTerm, SearchOption searchOption, bool noBackup = true)
+        {
+            List<string> formattedFiles = new();
+            string[] inputFiles = Directory.GetFiles(path, searchTerm, searchOption);
+
+            for (int i = 0; i < inputFiles.Length; i++)
+            {
+                string filePath = inputFiles[i];
+                if (noBackup && filePath.Contains(BackupPath)) continue;
+
+                formattedFiles.Add(filePath);
+            }
+
+            return formattedFiles.ToArray();
+        }
+
         public static ResultsData Optimize(string inputDirectory, string backupDirectory, string optimizeSize, bool onlyOverSized, bool downsize, bool formatOptimization, Delegate optimizeProgressHandler)
         {
             ResultsData resultsData = new();
-            string[] inputFiles = Directory.GetFiles(inputDirectory, "*.ytd", SearchOption.AllDirectories);
+            string[] inputFiles = getFiles(inputDirectory, "*.ytd", SearchOption.AllDirectories);
             ushort optimizeSizeValue = Convert.ToUInt16(optimizeSize);
             bool doBackup = backupDirectory != "";
 
@@ -425,7 +445,7 @@ namespace ToolkitV.Models
         public static StatsData GetStatsData(string path, Delegate updateHandler)
         {
             StatsData results = new();
-            string[] inputFiles = Directory.GetFiles(path, "*.ytd", SearchOption.AllDirectories);
+            string[] inputFiles = getFiles(path, "*.ytd", SearchOption.AllDirectories);
 
             if (inputFiles.Length == 0)
             {

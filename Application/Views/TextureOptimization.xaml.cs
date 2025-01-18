@@ -86,9 +86,10 @@ namespace ToolKitV.Views
             }
         }
 
-        private void OnBackupPathChanged(object sender, PropertyChangedEventArgs e)
+        private async void OnBackupPathChanged(object sender, PropertyChangedEventArgs e)
         {
             BackupPath = BackupFolder.Path;
+            await Task.Run(() => updateBackupPath(BackupFolder.Path));
         }
 
         private void OnOnlyOverSizedTexturesChanged(object sender, PropertyChangedEventArgs e)
