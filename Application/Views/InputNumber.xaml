@@ -9,7 +9,7 @@
     <Grid>
         <StackPanel>
             <Label
-                Margin="0 14 0 0"
+                Margin="0 5 0 0"
                 HorizontalAlignment="Left"
                 Foreground="White"
                 Style="{StaticResource TT Norms Regular}" 

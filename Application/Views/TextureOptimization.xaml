@@ -11,19 +11,21 @@
                 <local:SelectFolder
                     x:Name="MainFolder"
                     Title="Textures Folder"
+                    Description="The folder containing the YTD files."
                     PropertyChanged="OnMainPathChanged"/>
 
-                <StackPanel Margin="0 10 0 0">
+                <StackPanel Margin="0 5 0 0">
                     <!--<local:ToogleButton
                         Title ="Backup"/>-->
 
                     <local:SelectFolder
                         x:Name="BackupFolder"
                         Title="Backup Folder"
+                        Description="Folder where the files that will be changed be backupped."
                         PropertyChanged="OnBackupPathChanged"/>
                 </StackPanel>
 
-                <StackPanel Margin="0 10 0 0">
+                <StackPanel Margin="0 5 0 0">
                     <local:ToogleButton
                         x:Name="OnlyOverSized"
                         Title="Only oversized texture dictionaries"
@@ -40,7 +42,7 @@
                         PropertyChanged="OptimizeSize_PropertyChanged"/>
                 </StackPanel>
 
-                <StackPanel Margin="0 10 0 0">
+                <StackPanel Margin="0 5 0 0">
                     <local:ToogleButton
                         x:Name="Downsize"
                         Title="Downsize"
@@ -49,7 +51,7 @@
                         IsToogled="True"/>
                 </StackPanel>
 
-                <StackPanel Margin="0 10 0 0">
+                <StackPanel Margin="0 5 0 0">
                     <local:ToogleButton
                         x:Name="FormatOptimize"
                         Title="Format optimization"
@@ -57,7 +59,7 @@
                         PropertyChanged="FormatOptimize_PropertyChanged"/>
                 </StackPanel>
 
-                <StackPanel Margin="0 35 0 0" Orientation="Horizontal">
+                <StackPanel Margin="0 15 0 0" Orientation="Horizontal">
                     <local:Button x:Name="OptimizeButton" Title="Optimize" IsButtonEnabledValue="False" Click="OptimizeButton_Click"/>
                     <local:Button x:Name="AnalyzeButton" Title="Analyze" IsButtonEnabledValue="False" Click="AnalyzeButton_Click" Margin="30 0 0 0"/>
                 </StackPanel>
