@@ -13,18 +13,18 @@ namespace ToolKitV
 
             bool canStart = false;
 
-#if DEBUG
-            canStart = true;
-#else
-            for (int i = 0; i != e.Args.Length; ++i)
-            {
-                if (e.Args[i] == "-startedFromUpdater")
+            #if DEBUG
+                canStart = true;
+            #else
+                for (int i = 0; i != e.Args.Length; ++i)
                 {
-                    canStart = true;
-                    break;
+                    if (e.Args[i] == "-startedFromUpdater")
+                    {
+                        canStart = true;
+                        break;
+                    }
                 }
-            }
-#endif
+            #endif
             if (!Mutex.WaitOne(0, false) || !canStart)
             {
                 Current.Shutdown();
