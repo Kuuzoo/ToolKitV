@@ -1,8 +1,8 @@
 #pragma once
 
-// // При включении SDKDDKVer.h будет задана самая новая из доступных платформ Windows.
-// Если вы планируете сборку приложения для предыдущей версии платформы Windows, включите WinSDKVer.h и
-// задайте желаемую платформу в макросе _WIN32_WINNT, прежде чем включать SDKDDKVer.h.
+// When including SDKDDKVer.h, the highest available Windows platform will be targeted.
+// If you plan to build your application for a previous version of Windows, include WinSDKVer.h and
+// set the desired platform in the _WIN32_WINNT macro before including SDKDDKVer.h.
 #include <SDKDDKVer.h>
 
 #define API_URL "https://api.umbrella.re"

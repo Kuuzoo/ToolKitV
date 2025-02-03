@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Включаемый файл, созданный в Microsoft Visual C++.
-// Используется Updater.rc
+// Included file created in Microsoft Visual C++.
+// Used by Updater.rc
 //
 #define IDB_BITMAP1                     101
 #define IDI_ICON1                       102
