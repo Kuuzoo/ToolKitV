@@ -12,113 +12,70 @@
         </Grid.RowDefinitions>
 
         <TextBlock Text="Tools Menu"
-            Foreground="#FFFFFF"
-            VerticalAlignment="Top"
-            HorizontalAlignment="Left"
-            Style="{StaticResource TT Norms Medium}"
-            FontSize="14px"
-            Typography.Capitals="AllSmallCaps"
-            Grid.Row="0"
-        />
+                   Foreground="#FFFFFF"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Left"
+                   Style="{StaticResource TT Norms Medium}"
+                   FontSize="14px"
+                   Typography.Capitals="AllSmallCaps"
+                   Grid.Row="0"/>
 
-        <ListView Grid.Row="1" BorderBrush="Transparent" Background="Transparent" HorizontalAlignment="Left">
+        <ListView Grid.Row="1" BorderBrush="Transparent" Background="Transparent" HorizontalAlignment="Left"
+                  ItemsSource="{Binding MenuOptions}" SelectionChanged="Menu_Select" x:Name="MenuListView">
             <ListView.ItemContainerStyle>
                 <Style TargetType="{x:Type ListViewItem}">
-                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Margin" Value="0 5 0 0"/>
+                    <Setter Property="IsEnabled" Value="{Binding Enabled}"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="{x:Type ListViewItem}">
-                                <ContentPresenter />
+                                <Border Background="{TemplateBinding Background}" BorderThickness="1" CornerRadius="10">
+                                    <ContentPresenter />
+                                </Border>
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Enabled}" Value="False">
+                            <Setter Property="Foreground" Value="#666666"/>
+                            <Setter Property="Background" Value="#99222222"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Enabled}" Value="True">
+                            <Setter Property="Cursor" Value="Hand"/>
+                        </DataTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="#33FFFFFF"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#33FFFFFF"/>
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
 
-            <ListViewItem Width="210" Height="50">
-                <Border Visibility="{Binding Path=Item.Visible}" Tag="{Binding}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel Orientation="Horizontal">
-                        <Image HorizontalAlignment="Left" Margin="11 0 0 0" Width="24" Height="24" Source="../Assets/Images/textureIcon.png"/>
-
-                        <TextBlock Text="Texture Optimizer"
-                            Foreground="#FFFFFF"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource TT Norms Medium}"
-                            FontSize="14px"
-                            Margin="30 0 0 0"                                   
-                            Typography.Capitals="AllSmallCaps"
-                        />
-                    </StackPanel>
-
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#0DFFFFFF" />
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#33FFFFFF" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                </Border>
-            </ListViewItem>
-            <ListViewItem Width="50" Height="50" Margin="0 5 0 0" IsEnabled="False" HorizontalAlignment="Left">
-                <Border Visibility="{Binding Path=Item.Visible}" Tag="{Binding}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel Orientation="Horizontal">
-                        <Image  HorizontalAlignment="Left" Margin="11 0 0 0" Width="24" Height="24" Source="../Assets/Images/vehiclesIcon.png"/>
-
-                        <TextBlock Text="Vehicles"
-                            Foreground="#0FFFFFFF"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource TT Norms Medium}"
-                            FontSize="14px"
-                            Margin="30 0 0 0"                                   
-                            Typography.Capitals="AllSmallCaps"
-                        />
-                    </StackPanel>
-
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#03FFFFFF" />
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#33FFFFFF" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                </Border>
-            </ListViewItem>
-            <ListViewItem Width="50" Height="50" Margin="0 5 0 0" IsEnabled="False" HorizontalAlignment="Left">
-                <Border Visibility="{Binding Path=Item.Visible}" Tag="{Binding}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel Orientation="Horizontal">
-                        <Image HorizontalAlignment="Left" Margin="11 0 0 0" Width="24" Height="24" Source="../Assets/Images/clothesIcon.png"/>
-
-                        <TextBlock Text="Clothes"
-                            Foreground="#0FFFFFFF"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource TT Norms Medium}"
-                            FontSize="14px"
-                            Margin="30 0 0 0"                                   
-                            Typography.Capitals="AllSmallCaps"
-                        />
-                    </StackPanel>
-
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#03FFFFFF" />
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#33FFFFFF" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                </Border>
-            </ListViewItem>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Border CornerRadius="10" BorderThickness="1" Background="#03FFFFFF" Height="50" MinWidth="210">
+                        <StackPanel Orientation="Horizontal" Margin="11,0,0,0">
+                            <Image Source="{Binding IconPath}" Width="24" Height="24"/>
+                            <TextBlock Text="{Binding Name}"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       FontSize="14px"
+                                       Margin="30,0,0,0"
+                                       Style="{StaticResource TT Norms Medium}"
+                                       Typography.Capitals="AllSmallCaps"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
         </ListView>
     </Grid>
 </UserControl>
