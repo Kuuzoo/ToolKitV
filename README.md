@@ -13,6 +13,7 @@ Check [our site](https://umbrella.re)
 - Optimize textures (with many settings)
 
 ## Todo
+- Unpack RPF archives automatically
 - Opportunity for optimize/join/download-convert vehicles
 - Clothes, add tools for convert replace clothes to add-on, clothes editor/creator(meta)
 
